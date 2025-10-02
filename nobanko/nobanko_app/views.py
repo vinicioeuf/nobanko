@@ -1,5 +1,5 @@
 from datetime import date
-
+from .models import Usuario
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth.models import User
@@ -482,6 +482,7 @@ def boletos(request):
 
 
 def cadastro(request):
+	
 	context = base_context(
 		{
 			"page_title": "Abra sua conta NoBanko",
@@ -557,9 +558,11 @@ def cadastro(request):
 			],
 		}
 	)
+	
 	if request.method == "GET":
 		return render(request, "cadastro.html", context)
 	else:
+		# Capturando os dados do formulário
 		nome = request.POST.get("full_name")
 		cpf = request.POST.get("cpf")
 		birth_date = request.POST.get("birth_date")
@@ -568,19 +571,24 @@ def cadastro(request):
 		password = request.POST.get("password")
 		password_confirmation = request.POST.get("password_confirmation")
 
-		user = User.objects.filter(email=email).first()
+		# Verificando se o usuário já existe
+		user = Usuario.objects.filter(email=email).first()  # Usando o modelo Usuario aqui
 		if user:
 			return HttpResponse("Usuário já existe")
 
-		novo_usuario = User.objects.create_user(
+		# Criando o novo usuário com os dados personalizados
+		novo_usuario = Usuario.objects.create_user(
 			email=email,
-			username=email,
+			username=email,  # ou username que preferir
 			password=password,
-			first_name=nome
+			first_name=nome,
+			cpf=cpf,
+			birth_date=birth_date,
+			phone=phone,
 		)
+		
 		novo_usuario.save()
-		return redirect('login_view')
-    
+		return redirect('nobanko_app:login')
 	
 
 
@@ -614,12 +622,17 @@ def login_view(request):
     if request.method == "GET":
         return render(request, "login.html", context)
     else:
-        email = request.POST.get("email")
+        # Usando 'username' para capturar o email no formulário
+        email = request.POST.get("username")  # Capturando 'username' que é o 'email'
         password = request.POST.get("password")
+        
+        # Aqui estamos dizendo ao Django para autenticar o usuário pelo email (usando 'username=email')
         user = authenticate(request, username=email, password=password)
-        if user:
+
+        if user is not None:
+            # Autenticação bem-sucedida, logando o usuário
             login(request, user)
-            return redirect('cliente')
+            return redirect('nobanko_app:cliente')  # Redireciona para a página do cliente
         else:
             return HttpResponse('E-mail ou senha inválidas')
 	
