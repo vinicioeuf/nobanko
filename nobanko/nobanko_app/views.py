@@ -1,8 +1,9 @@
 from datetime import date
 
-from django.shortcuts import render
-
-
+from django.http import HttpResponse
+from django.shortcuts import redirect, render
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, logout, login
 def base_context(extra=None):
 	base = {
 		"bank_name": "NoBanko",
@@ -556,11 +557,35 @@ def cadastro(request):
 			],
 		}
 	)
-	return render(request, "cadastro.html", context)
+	if request.method == "GET":
+		return render(request, "cadastro.html", context)
+	else:
+		nome = request.POST.get("full_name")
+		cpf = request.POST.get("cpf")
+		birth_date = request.POST.get("birth_date")
+		phone = request.POST.get("phone")
+		email = request.POST.get("email")
+		password = request.POST.get("password")
+		password_confirmation = request.POST.get("password_confirmation")
+
+		user = User.objects.filter(email=email).first()
+		if user:
+			return HttpResponse("Usuário já existe")
+
+		novo_usuario = User.objects.create_user(
+			email=email,
+			username=email,
+			password=password,
+			first_name=nome
+		)
+		novo_usuario.save()
+		return redirect('login_view')
+    
+	
 
 
 def login_view(request):
-	context = base_context(
+    context = base_context(
 		{
 			"page_title": "Entre na sua conta",
 			"subtitle": "Use suas credenciais para acessar todos os produtos NoBanko.",
@@ -586,4 +611,17 @@ def login_view(request):
 			],
 		}
 	)
-	return render(request, "login.html", context)
+    if request.method == "GET":
+        return render(request, "login.html", context)
+    else:
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        user = authenticate(request, username=email, password=password)
+        if user:
+            login(request, user)
+            return redirect('cliente')
+        else:
+            return HttpResponse('E-mail ou senha inválidas')
+	
+ 
+
