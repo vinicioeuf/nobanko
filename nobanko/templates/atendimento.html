@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Atendimento · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Escolha o canal que preferir. Estamos com você 24 horas por dia, todos os dias.</p>
+    </header>
+    <div class="nb-grid">
+        {% for channel in support_channels %}
+            <article class="nb-card">
+                <h3>{{ channel.title }}</h3>
+                <p>{{ channel.description }}</p>
+                <span class="nb-caption">{{ channel.availability }}</span>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <div class="nb-split">
+        <div>
+            <h2>Indicadores em tempo real</h2>
+            <ul class="nb-metric-list">
+                {% for metric in service_metrics %}
+                    <li>
+                        <span>{{ metric.label }}</span>
+                        <strong>{{ metric.value }}</strong>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div>
+            <h2>FAQ rápido</h2>
+            <div class="nb-accordion">
+                {% for faq in faqs %}
+                    <details>
+                        <summary>{{ faq.question }}</summary>
+                        <p>{{ faq.answer }}</p>
+                    </details>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

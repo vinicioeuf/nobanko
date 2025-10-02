@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Cartões · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Modernize a relação com o seu cartão físico, virtual e adicionais.</p>
+    </header>
+
+    <div class="nb-card-preview">
+        <div class="nb-credit-card">
+            <span class="nb-credit-card__brand">{{ bank_name }}</span>
+            <strong class="nb-credit-card__name">Cliente NoBanko</strong>
+            <span class="nb-credit-card__number">•••• •••• •••• 1234</span>
+            <div class="nb-credit-card__meta">
+                <span>valid 07/28</span>
+                <span>cvv 123</span>
+            </div>
+        </div>
+        <div class="nb-card-preview__details">
+            <h2>{{ card_overview.nome }}</h2>
+            <ul>
+                <li><span>Limite atual</span><strong>{{ card_overview.limite_atual }}</strong></li>
+                <li><span>Limite disponível</span><strong>{{ card_overview.limite_disponivel }}</strong></li>
+                <li><span>Fechamento</span><strong>{{ card_overview.fechamento }}</strong></li>
+                <li><span>Vencimento</span><strong>{{ card_overview.vencimento }}</strong></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Ações rápidas</h2>
+    </header>
+    <div class="nb-grid">
+        {% for action in card_actions %}
+            <article class="nb-card">
+                <h3>{{ action.label }}</h3>
+                <p>{{ action.description }}</p>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Cartões adicionais</h2>
+    </header>
+    <div class="nb-table">
+        <div class="nb-table__head">
+            <span>Cartão</span>
+            <span>Status</span>
+            <span>Limite dedicado</span>
+        </div>
+        {% for extra in additional_cards %}
+            <div class="nb-table__row">
+                <span>{{ extra.nome }}</span>
+                <span>{{ extra.status }}</span>
+                <strong>{{ extra.limite }}</strong>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

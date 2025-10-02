@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Abra sua conta · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>{{ subtitle }}</p>
+    </header>
+
+    <div class="nb-form-layout">
+        <form class="nb-form nb-form--card" method="post" novalidate>
+            {% csrf_token %}
+            {% for section in form_sections %}
+                <fieldset class="nb-form__section">
+                    <legend>{{ section.title }}</legend>
+                    <div class="nb-form__grid">
+                        {% for field in section.fields %}
+                            <label class="nb-form__field{% if field.width == 'half' %} nb-form__field--half{% endif %}" for="{{ field.name }}">
+                                <span>{{ field.label }}</span>
+                                <input
+                                    id="{{ field.name }}"
+                                    name="{{ field.name }}"
+                                    type="{{ field.type }}"
+                                    {% if field.autocomplete %}autocomplete="{{ field.autocomplete }}"{% endif %}
+                                    {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                                    required
+                                >
+                            </label>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+            {% endfor %}
+
+            <label class="nb-checkbox">
+                <input type="checkbox" name="accept_terms" required>
+                <span>Concordo com os termos de uso e com a política de privacidade do {{ bank_name }}.</span>
+            </label>
+
+            <div class="nb-form__actions">
+                <button class="nb-button nb-button--solid" type="submit">Criar conta gratuita</button>
+                <a class="nb-link" href="{% url 'nobanko_app:login' %}">Já tenho conta</a>
+            </div>
+        </form>
+
+        <aside class="nb-form__aside">
+            <h2>Por que abrir sua conta</h2>
+            <ul class="nb-highlight-list">
+                {% for benefit in benefits %}
+                    <li>
+                        <span class="nb-dot" aria-hidden="true"></span>
+                        <span>{{ benefit }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </aside>
+    </div>
+</section>
+{% endblock %}

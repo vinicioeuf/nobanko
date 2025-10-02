@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Fatura · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Transparência total sobre suas despesas. Antecipe, negocie e exporte com poucos cliques.</p>
+    </header>
+    <div class="nb-invoice" data-progress-scope>
+        <div class="nb-invoice__summary">
+            <span class="nb-chip">Fatura atual</span>
+            <strong class="nb-invoice__value">{{ current_invoice.valor }}</strong>
+            <div class="nb-progress nb-progress--thick">
+                <span class="nb-progress__fill" data-progress="{{ current_invoice.progresso }}"></span>
+            </div>
+            <div class="nb-invoice__dates">
+                <div>
+                    <span>Fechamento</span>
+                    <strong>{{ current_invoice.data_fechamento }}</strong>
+                </div>
+                <div>
+                    <span>Vencimento</span>
+                    <strong>{{ current_invoice.data_vencimento }}</strong>
+                </div>
+            </div>
+        </div>
+        <div class="nb-invoice__chart">
+            <h2>Gastos por categoria</h2>
+            <ul>
+                {% for category in spending_categories %}
+                    <li>
+                        <span>{{ category.label }}</span>
+                        <div class="nb-progress nb-progress--thin">
+                            <span class="nb-progress__fill" data-progress="{{ category.percent }}"></span>
+                        </div>
+                        <strong>{{ category.value }}</strong>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>O que você pode fazer agora</h2>
+    </header>
+    <div class="nb-grid">
+        {% for action in invoice_actions %}
+            <article class="nb-card">
+                <h3>{{ action.label }}</h3>
+                <p>{{ action.description }}</p>
+                <button class="nb-button nb-button--ghost" type="button">Iniciar</button>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.querySelectorAll('[data-progress]').forEach(function (fill) {
+        var value = parseFloat(fill.dataset.progress || '0');
+        if (!isNaN(value)) {
+            fill.style.width = Math.min(Math.max(value, 0), 100) + '%';
+        }
+    });
+</script>
+{% endblock %}

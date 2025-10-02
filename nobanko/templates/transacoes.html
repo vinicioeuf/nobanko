@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Transações · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p class="nb-caption">Filtre, acompanhe e entenda o comportamento da sua conta.</p>
+    </header>
+
+    <div class="nb-chip-group">
+        {% for filter in transaction_filters %}
+            <button class="nb-chip-button{% if filter.active %} is-active{% endif %}" type="button">{{ filter.label }}</button>
+        {% endfor %}
+    </div>
+
+    <div class="nb-table">
+        <div class="nb-table__head">
+            <span>Descrição</span>
+            <span>Categoria</span>
+            <span>Valor</span>
+            <span>Quando</span>
+        </div>
+        {% for tx in transactions %}
+            <div class="nb-table__row">
+                <span>{{ tx.title }}</span>
+                <span>{{ tx.category }}</span>
+                <strong class="nb-table__amount">{{ tx.amount }}</strong>
+                <span>{{ tx.timestamp }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Insights automáticos</h2>
+    </header>
+    <ul class="nb-highlight-list">
+        {% for insight in insights %}
+            <li>
+                <span class="nb-dot" aria-hidden="true"></span>
+                <span>{{ insight }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

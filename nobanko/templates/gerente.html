@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerente · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Um especialista que conhece seus objetivos e antecipa oportunidades para você.</p>
+    </header>
+
+    <div class="nb-card nb-card--profile">
+        <div class="nb-avatar" aria-hidden="true">CR</div>
+        <div class="nb-card--profile__body">
+            <h2>{{ manager_profile.nome }}</h2>
+            <p>{{ manager_profile.especialidade }}</p>
+            <ul>
+                <li>
+                    <span>Disponibilidade</span>
+                    <strong>{{ manager_profile.disponibilidade }}</strong>
+                </li>
+                <li>
+                    <span>Tempo médio de resposta</span>
+                    <strong>{{ manager_profile.tempo_resposta }}</strong>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Converse do seu jeito</h2>
+    </header>
+    <div class="nb-grid">
+        {% for channel in contact_channels %}
+            <article class="nb-card">
+                <h3>{{ channel.label }}</h3>
+                <p>{{ channel.description }}</p>
+                <button class="nb-button nb-button--ghost" type="button">Agendar</button>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Últimas entregas do gerente</h2>
+    </header>
+    <ul class="nb-highlight-list">
+        {% for action in recent_actions %}
+            <li>
+                <span class="nb-dot" aria-hidden="true"></span>
+                <span>{{ action }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

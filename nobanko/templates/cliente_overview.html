@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Central do cliente · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Visualize todas as áreas do seu banco digital em um só lugar: saldo, cartões, mensagens e muito mais.</p>
+    </header>
+
+    <div class="nb-dashboard">
+        <div class="nb-dashboard__snapshot">
+            <h2>Resumo financeiro</h2>
+            <ul>
+                <li>
+                    <span>Saldo disponível</span>
+                    <strong>{{ account_snapshot.saldo }}</strong>
+                </li>
+                <li>
+                    <span>Investido</span>
+                    <strong>{{ account_snapshot.investido }}</strong>
+                </li>
+                <li>
+                    <span>Limite total</span>
+                    <strong>{{ account_snapshot.limite }}</strong>
+                </li>
+                <li>
+                    <span>Fatura atual</span>
+                    <strong>{{ account_snapshot.fatura_atual }}</strong>
+                </li>
+            </ul>
+        </div>
+        <div class="nb-dashboard__modules">
+            {% for module in modules %}
+                <article class="nb-card nb-card--module">
+                    <div>
+                        <h3>{{ module.title }}</h3>
+                        <p>{{ module.summary }}</p>
+                    </div>
+                    <a class="nb-link" href="{% url module.cta.view_name %}">{{ module.cta.label }}</a>
+                </article>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Últimas atividades</h2>
+        <p>Veja o que acabou de acontecer na sua conta e navegue rapidamente até o detalhe.</p>
+    </header>
+    <ol class="nb-timeline">
+        {% for event in timeline %}
+            <li class="nb-timeline__item">
+                <div class="nb-timeline__point"></div>
+                <div class="nb-timeline__content">
+                    <strong>{{ event.label }}</strong>
+                    <span class="nb-caption">{{ event.timestamp }}</span>
+                    <span class="nb-status">{{ event.status }}</span>
+                </div>
+            </li>
+        {% endfor %}
+    </ol>
+</section>
+{% endblock %}

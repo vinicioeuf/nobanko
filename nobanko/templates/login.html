@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Entrar · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <div class="nb-form-layout nb-form-layout--narrow">
+        <form class="nb-form nb-form--card" method="post" novalidate>
+            {% csrf_token %}
+            <header class="nb-form__header">
+                <h1>{{ page_title }}</h1>
+                <p>{{ subtitle }}</p>
+            </header>
+
+            <div class="nb-form__grid nb-form__grid--single">
+                {% for field in login_fields %}
+                    <label class="nb-form__field" for="{{ field.name }}">
+                        <span>{{ field.label }}</span>
+                        <input
+                            id="{{ field.name }}"
+                            name="{{ field.name }}"
+                            type="{{ field.type }}"
+                            {% if field.autocomplete %}autocomplete="{{ field.autocomplete }}"{% endif %}
+                            {% if field.placeholder %}placeholder="{{ field.placeholder }}"{% endif %}
+                            required
+                        >
+                    </label>
+                {% endfor %}
+            </div>
+
+            <label class="nb-checkbox nb-checkbox--inline">
+                <input type="checkbox" name="remember" checked>
+                <span>Manter conectado neste dispositivo</span>
+            </label>
+
+            <div class="nb-form__actions">
+                <button class="nb-button nb-button--solid" type="submit">Entrar</button>
+                <a class="nb-link" href="#">Esqueci minha senha</a>
+            </div>
+
+            <footer class="nb-form__footer">
+                <span>Ainda não tem conta?</span>
+                <a class="nb-link" href="{% url 'nobanko_app:cadastro' %}">Abra agora mesmo</a>
+            </footer>
+        </form>
+
+        <aside class="nb-form__aside nb-form__aside--compact">
+            <h2>Dicas de segurança</h2>
+            <ul class="nb-highlight-list">
+                {% for tip in tips %}
+                    <li>
+                        <span class="nb-dot" aria-hidden="true"></span>
+                        <span>{{ tip }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </aside>
+    </div>
+</section>
+{% endblock %}

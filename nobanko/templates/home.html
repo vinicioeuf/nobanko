@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Início · NoBanko{% endblock %}
+
+{% block hero %}
+<section class="nb-hero">
+    <div class="nb-hero__content">
+        <h1 class="nb-hero__title">{{ hero.title }}</h1>
+        <p class="nb-hero__subtitle">{{ hero.subtitle }}</p>
+        <div class="nb-hero__actions">
+            <a class="nb-button nb-button--solid" href="{% url hero.primary_cta.view_name %}">{{ hero.primary_cta.label }}</a>
+            <a class="nb-button nb-button--ghost" href="{% url hero.secondary_cta.view_name %}">{{ hero.secondary_cta.label }}</a>
+        </div>
+    </div>
+    <div class="nb-hero__glass">
+        <div class="nb-glass-card">
+            <span class="nb-chip">Saldo disponível</span>
+            <strong class="nb-glass-card__value">R$ 8.540,27</strong>
+            <div class="nb-progress">
+                <span style="width: 72%"></span>
+            </div>
+            <small class="nb-caption">Atualizado em tempo real. </small>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="nb-section">
+    <header class="nb-section__header">
+        <h2>Feito para simplificar sua vida financeira</h2>
+        <p>Inspirado pelo Nubank, o NoBanko traz a mesma experiência fluida, com identidade própria e foco na autonomia do cliente.</p>
+    </header>
+    <div class="nb-grid">
+        {% for feature in feature_cards %}
+            <article class="nb-card">
+                <span class="nb-chip">{{ feature.badge }}</span>
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt">
+    <header class="nb-section__header">
+        <h2>3 passos para viver a experiência NoBanko</h2>
+    </header>
+    <div class="nb-journey">
+        {% for step in journey_steps %}
+            <div class="nb-journey__step">
+                <span class="nb-journey__number">{{ forloop.counter }}</span>
+                <div>
+                    <h3>{{ step.title }}</h3>
+                    <p>{{ step.description }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section">
+    <header class="nb-section__header">
+        <h2>Clientes que já vivenciam o futuro</h2>
+    </header>
+    <div class="nb-testimonials">
+        {% for testimonial in testimonials %}
+            <figure class="nb-testimonial">
+                <blockquote>&ldquo;{{ testimonial.quote }}&rdquo;</blockquote>
+                <figcaption>
+                    <strong>{{ testimonial.name }}</strong>
+                    <span>{{ testimonial.role }}</span>
+                </figcaption>
+            </figure>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
