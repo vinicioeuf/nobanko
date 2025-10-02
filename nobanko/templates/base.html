@@ -15,7 +15,13 @@
     <a href="#conteudo" class="nb-skip-link">Pular para o conteúdo</a>
     <header class="nb-header">
         <div class="nb-header__brand">
-            <span class="nb-logo" aria-hidden="true">nb</span>
+            <span class="nb-logo nb-logo--image">
+                <img
+                    class="nb-logo__image"
+                    src="{% static 'images/logo_gemini.png' %}"
+                    alt="Logotipo {{ bank_name }}"
+                >
+            </span>
             <span class="nb-header__title">{{ bank_name }}</span>
         </div>
         <div class="nb-header__nav-wrapper">

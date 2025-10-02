@@ -69,6 +69,21 @@ body.nb-body {
     text-transform: uppercase;
 }
 
+.nb-logo--image {
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    font-size: 0;
+}
+
+.nb-logo--image .nb-logo__image {
+    width: 48px;
+    height: 48px;
+    display: block;
+    border-radius: 16px;
+    box-shadow: 0 18px 28px rgba(7, 0, 35, 0.5);
+}
+
 .nb-header__nav-wrapper {
     display: flex;
     align-items: center;
@@ -1146,6 +1161,11 @@ body.nb-nav-open {
             "cta"
             "nav";
         text-align: left;
+    }
+
+    .nb-logo--image .nb-logo__image {
+        width: 44px;
+        height: 44px;
     }
 
     .nb-header__cta {
