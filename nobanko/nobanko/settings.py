@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-1o7-uyi5upd7ll^zbi1+u)5k=42xyo597^n3p8e&k&0+evuh=h
 DEBUG = True
 
 ALLOWED_HOSTS = []
-# AUTH_USER_MODEL = "nobanko_app.CustomUser"
+# AUTH_USER_MODEL = "nobanko_app.Usuario"
 
 # Application definition
 
@@ -37,7 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'nobanko_app'
+    'nobanko_app.apps.NobankoAppConfig',
 ]
 
 MIDDLEWARE = [
