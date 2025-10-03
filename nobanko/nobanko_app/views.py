@@ -2,11 +2,8 @@ from datetime import date
 
 from django.http import HttpResponse
 from django.shortcuts import redirect, render
-from django.contrib.auth import authenticate, get_user_model, login, logout
-
-from .models import Usuario
-
-User = get_user_model()
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, logout, login
 def base_context(extra=None):
 	base = {
 		"bank_name": "NoBanko",
@@ -562,51 +559,39 @@ def cadastro(request):
 	)
 	if request.method == "GET":
 		return render(request, "cadastro.html", context)
+	else:
+		nome = request.POST.get("full_name")
+		cpf = request.POST.get("cpf")
+		birth_date = request.POST.get("birth_date")
+		phone = request.POST.get("phone")
+		email = request.POST.get("email")
+		password = request.POST.get("password")
+		password_confirmation = request.POST.get("password_confirmation")
 
-	nome = request.POST.get("full_name")
-	cpf = request.POST.get("cpf")
-	birth_date = request.POST.get("birth_date") or None
-	phone = request.POST.get("phone")
-	email = request.POST.get("email")
-	password = request.POST.get("password")
-	password_confirmation = request.POST.get("password_confirmation")
+		user = User.objects.filter(email=email).first()
+		if user:
+			return HttpResponse("Usuário já existe")
 
-	if password != password_confirmation:
-		return HttpResponse("As senhas não coincidem")
-
-	if User.objects.filter(email=email).exists():
-		return HttpResponse("Usuário já existe")
-
-	if cpf and Usuario.objects.filter(cpf=cpf).exists():
-		return HttpResponse("CPF já cadastrado")
-
-	novo_usuario = User.objects.create_user(
-		email=email,
-		username=email,
-		password=password,
-		first_name=nome,
-	)
-	Usuario.objects.create(
-		user=novo_usuario,
-		cpf=cpf,
-		phone=phone,
-		birth_date=birth_date,
-	)
-	login(request, novo_usuario)
-	return redirect('nobanko_app:cliente')
+		novo_usuario = User.objects.create_user(
+			email=email,
+			username=email,
+			password=password,
+			first_name=nome
+		)
+		novo_usuario.save()
+		return redirect('login_view')
     
 	
 
 
-
 def login_view(request):
-	context = base_context(
+    context = base_context(
 		{
 			"page_title": "Entre na sua conta",
 			"subtitle": "Use suas credenciais para acessar todos os produtos NoBanko.",
 			"login_fields": [
 				{
-					"label": "E-mail",
+					"label": "E-mail ou CPF",
 					"name": "username",
 					"type": "text",
 					"autocomplete": "username",
@@ -626,17 +611,17 @@ def login_view(request):
 			],
 		}
 	)
-
-	if request.method == "GET":
-		return render(request, "login.html", context)
-
-	username = request.POST.get("username")
-	password = request.POST.get("password")
-	user = authenticate(request, username=username, password=password)
-	if user:
-		login(request, user)
-		return redirect('nobanko_app:cliente')
-	return HttpResponse('E-mail ou senha inválidas')
+    if request.method == "GET":
+        return render(request, "login.html", context)
+    else:
+        email = request.POST.get("email")
+        password = request.POST.get("password")
+        user = authenticate(request, username=email, password=password)
+        if user:
+            login(request, user)
+            return redirect('cliente')
+        else:
+            return HttpResponse('E-mail ou senha inválidas')
 	
  
 
