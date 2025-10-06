@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Empréstimos · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Ofertas personalizadas, transparência total nas parcelas e contratação 100% digital.</p>
+    </header>
+    <div class="nb-grid">
+        {% for offer in loan_offers %}
+            <article class="nb-card">
+                <span class="nb-chip">Taxa {{ offer.rate }}</span>
+                <h3>{{ offer.title }}</h3>
+                <p>{{ offer.description }}</p>
+                <button class="nb-button nb-button--solid" type="button">Simular</button>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <div class="nb-split">
+        <div>
+            <h2>Simulador rápido</h2>
+            <div class="nb-form">
+                <label for="valor-simulacao">Valor desejado</label>
+                <input id="valor-simulacao" type="range" min="1000" max="80000" value="15000">
+                <div class="nb-form__hint">Entre {{ simulator.valor_min }} e {{ simulator.valor_max }}</div>
+
+                <label for="parcelas">Parcelas</label>
+                <select id="parcelas">
+                    {% for parcela in simulator.parcelas %}
+                        <option>{{ parcela }}</option>
+                    {% endfor %}
+                </select>
+
+                <button class="nb-button nb-button--ghost" type="button">Ver parcelas</button>
+            </div>
+        </div>
+        <div>
+            <h2>Dicas para aproveitar melhor</h2>
+            <ul class="nb-highlight-list">
+                {% for tip in tips %}
+                    <li>
+                        <span class="nb-dot" aria-hidden="true"></span>
+                        <span>{{ tip }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</section>
+{% endblock %}

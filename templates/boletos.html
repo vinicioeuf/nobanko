@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Boletos · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Emita, pague e acompanhe boletos com leitura automática e agendamentos inteligentes.</p>
+    </header>
+    <div class="nb-grid">
+        {% for action in boleto_actions %}
+            <article class="nb-card">
+                <h3>{{ action.title }}</h3>
+                <p>{{ action.description }}</p>
+                <button class="nb-button nb-button--ghost" type="button">Começar</button>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Boletos próximos do vencimento</h2>
+    </header>
+    <div class="nb-table">
+        <div class="nb-table__head">
+            <span>Conta</span>
+            <span>Valor</span>
+            <span>Vencimento</span>
+        </div>
+        {% for bill in upcoming_bills %}
+            <div class="nb-table__row">
+                <span>{{ bill.title }}</span>
+                <strong>{{ bill.valor }}</strong>
+                <span>{{ bill.vencimento }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Integrações inteligentes</h2>
+    </header>
+    <ul class="nb-highlight-list">
+        {% for integration in integrations %}
+            <li>
+                <span class="nb-dot" aria-hidden="true"></span>
+                <span>{{ integration }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Mensagens · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Converse com especialistas e acompanhe tudo em um espaço seguro e organizado.</p>
+    </header>
+    <div class="nb-table nb-table--messages">
+        <div class="nb-table__head">
+            <span>Canal</span>
+            <span>Última mensagem</span>
+            <span>Status</span>
+        </div>
+        {% for thread in threads %}
+            <div class="nb-table__row">
+                <span>{{ thread.title }}</span>
+                <span>{{ thread.last_message }}</span>
+                <span class="nb-status">{{ thread.status }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Dicas para manter tudo organizado</h2>
+    </header>
+    <ul class="nb-highlight-list">
+        {% for tip in message_tips %}
+            <li>
+                <span class="nb-dot" aria-hidden="true"></span>
+                <span>{{ tip }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

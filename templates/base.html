@@ -1,0 +1,208 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}NoBanko{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="nb-body">
+    <a href="#conteudo" class="nb-skip-link">Pular para o conteúdo</a>
+    <header class="nb-header">
+        <div class="nb-header__brand">
+            <span class="nb-logo nb-logo--image">
+                <img
+                    class="nb-logo__image"
+                    src="{% static 'images/logo_gemini.png' %}"
+                    alt="Logotipo {{ bank_name }}"
+                >
+            </span>
+            <span class="nb-header__title">{{ bank_name }}</span>
+        </div>
+        <div class="nb-header__nav-wrapper">
+            <button class="nb-nav__toggle" type="button" aria-expanded="false" aria-controls="nb-nav-menu">
+                <span class="nb-nav__toggle-icon" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+                <span class="nb-nav__toggle-text">Menu</span>
+            </button>
+            {% with primary_links=nav_links|slice:":5" secondary_links=nav_links|slice:"5:" %}
+            <nav class="nb-nav" id="nb-nav-menu" aria-label="Navegação principal" data-visible="true">
+                <div class="nb-nav__primary">
+                    {% for link in primary_links %}
+                        <a
+                            class="nb-nav__link{% if request.resolver_match and request.resolver_match.view_name == link.view_name %} nb-nav__link--active{% endif %}"
+                            href="{% url link.view_name %}"
+                            title="{{ link.description }}"
+                        >
+                            {{ link.label }}
+                        </a>
+                    {% endfor %}
+                </div>
+                {% if secondary_links %}
+                <div class="nb-nav__more" data-open="false">
+                    <button class="nb-nav__more-toggle" type="button" aria-expanded="false">
+                        Mais
+                        <span class="nb-nav__chevron" aria-hidden="true"></span>
+                    </button>
+                    <div class="nb-nav__more-panel" role="menu">
+                        {% for link in secondary_links %}
+                            <a
+                                class="nb-nav__link nb-nav__link--secondary{% if request.resolver_match and request.resolver_match.view_name == link.view_name %} nb-nav__link--active{% endif %}"
+                                href="{% url link.view_name %}"
+                                title="{{ link.description }}"
+                                role="menuitem"
+                            >
+                                {{ link.label }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </nav>
+            {% endwith %}
+        </div>
+        <div class="nb-header__cta">
+            {% if usuario_logado %}
+                <span class="nb-header__welcome">Olá, {{ usuario_logado.nome }}!</span>
+                <a class="nb-button nb-button--ghost" href="{% url 'nobanko_app:logout' %}">Sair</a>
+            {% else %}
+                <a class="nb-button nb-button--ghost" href="{% url 'nobanko_app:login' %}">Entrar</a>
+                <a class="nb-button nb-button--solid" href="{% url 'nobanko_app:cadastro' %}">Abra sua conta</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <main id="conteudo" class="nb-main" tabindex="-1">
+        {% block hero %}{% endblock %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="nb-footer">
+        <div class="nb-footer__brand">
+            <span class="nb-logo nb-logo--footer" aria-hidden="true">nb</span>
+            <span>{{ bank_name }} &copy; {{ current_year }}</span>
+        </div>
+        <div class="nb-footer__links">
+            <a href="{% url 'nobanko_app:atendimento' %}">Ajuda</a>
+            <a href="{% url 'nobanko_app:gerenciamento' %}">Gestão</a>
+            <a href="{% url 'nobanko_app:fatura' %}">Fatura</a>
+        </div>
+        <p class="nb-footer__legal">NoBanko é um projeto conceitual inspirado no Nubank para demonstrar interfaces digitais de um banco moderno.</p>
+    </footer>
+
+    {% block extra_scripts %}{% endblock %}
+    <script>
+        (function () {
+            const nav = document.querySelector('.nb-nav');
+            const navToggle = document.querySelector('.nb-nav__toggle');
+            const moreContainer = document.querySelector('.nb-nav__more');
+            const moreToggle = moreContainer ? moreContainer.querySelector('.nb-nav__more-toggle') : null;
+
+            if (!nav || !navToggle) {
+                return;
+            }
+
+            nav.dataset.ready = 'true';
+
+            const closeMore = () => {
+                if (!moreContainer) {
+                    return;
+                }
+                moreContainer.setAttribute('data-open', 'false');
+                if (moreToggle) {
+                    moreToggle.setAttribute('aria-expanded', 'false');
+                }
+            };
+
+            const closeNav = () => {
+                nav.setAttribute('data-visible', 'false');
+                navToggle.setAttribute('aria-expanded', 'false');
+                document.body.classList.remove('nb-nav-open');
+                closeMore();
+            };
+
+            const mediaQuery = window.matchMedia('(min-width: 981px)');
+
+            const syncWithViewport = (matches) => {
+                if (matches) {
+                    nav.setAttribute('data-visible', 'true');
+                    navToggle.setAttribute('aria-expanded', 'true');
+                    document.body.classList.remove('nb-nav-open');
+                    closeMore();
+                } else {
+                    nav.setAttribute('data-visible', 'false');
+                    navToggle.setAttribute('aria-expanded', 'false');
+                    document.body.classList.remove('nb-nav-open');
+                    closeMore();
+                }
+            };
+
+            syncWithViewport(mediaQuery.matches);
+            mediaQuery.addEventListener('change', (event) => syncWithViewport(event.matches));
+
+            navToggle.addEventListener('click', () => {
+                const isVisible = nav.getAttribute('data-visible') === 'true';
+                const nextVisible = !isVisible;
+                nav.setAttribute('data-visible', String(nextVisible));
+                navToggle.setAttribute('aria-expanded', String(nextVisible));
+                document.body.classList.toggle('nb-nav-open', nextVisible && window.innerWidth <= 980);
+                if (!nextVisible) {
+                    closeMore();
+                }
+            });
+
+            if (moreToggle && moreContainer) {
+                moreToggle.addEventListener('click', (event) => {
+                    event.stopPropagation();
+                    const isOpen = moreContainer.getAttribute('data-open') === 'true';
+                    const nextOpen = !isOpen;
+                    moreContainer.setAttribute('data-open', String(nextOpen));
+                    moreToggle.setAttribute('aria-expanded', String(nextOpen));
+                });
+
+                document.addEventListener('click', (event) => {
+                    if (moreContainer.getAttribute('data-open') !== 'true') {
+                        return;
+                    }
+
+                    if (!moreContainer.contains(event.target)) {
+                        moreContainer.setAttribute('data-open', 'false');
+                        moreToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+
+            nav.addEventListener('click', (event) => {
+                if (event.target.closest('a.nb-nav__link') && window.innerWidth <= 980) {
+                    closeNav();
+                }
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key !== 'Escape') {
+                    return;
+                }
+
+                if (window.innerWidth <= 980 && nav.getAttribute('data-visible') === 'true') {
+                    closeNav();
+                }
+
+                if (moreContainer && moreContainer.getAttribute('data-open') === 'true') {
+                    moreContainer.setAttribute('data-open', 'false');
+                    if (moreToggle) {
+                        moreToggle.setAttribute('aria-expanded', 'false');
+                    }
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

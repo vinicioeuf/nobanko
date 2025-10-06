@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciamento · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Um hub completo para gerenciar permissões, processos e governança da sua operação financeira.</p>
+    </header>
+    <div class="nb-grid">
+        {% for card in management_cards %}
+            <article class="nb-card">
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.description }}</p>
+                <button class="nb-button nb-button--ghost" type="button">Configurar</button>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Fluxo recomendado</h2>
+    </header>
+    <ol class="nb-journey nb-journey--vertical">
+        {% for step in workflow_steps %}
+            <li class="nb-journey__step">
+                <span class="nb-journey__number">{{ forloop.counter }}</span>
+                <p>{{ step }}</p>
+            </li>
+        {% endfor %}
+    </ol>
+</section>
+{% endblock %}

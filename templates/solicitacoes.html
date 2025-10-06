@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Solicitações · NoBanko{% endblock %}
+
+{% block content %}
+<section class="nb-section nb-section--dense">
+    <header class="nb-section__header">
+        <h1>{{ page_title }}</h1>
+        <p>Acompanhe suas solicitações em tempo real, com prazos estimados e atualizações claras.</p>
+    </header>
+    <div class="nb-table nb-table--cards">
+        <div class="nb-table__head">
+            <span>Solicitação</span>
+            <span>Status</span>
+            <span>Próximo passo</span>
+        </div>
+        {% for request in requests %}
+            <div class="nb-table__row">
+                <span>{{ request.title }}</span>
+                <span class="nb-status">{{ request.status }}</span>
+                <span>{{ request.estimated }}</span>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="nb-section nb-section--alt nb-section--dense">
+    <header class="nb-section__header">
+        <h2>Dicas para avançar mais rápido</h2>
+    </header>
+    <ul class="nb-highlight-list">
+        {% for step in next_steps %}
+            <li>
+                <span class="nb-dot" aria-hidden="true"></span>
+                <span>{{ step }}</span>
+            </li>
+        {% endfor %}
+    </ul>
+</section>
+{% endblock %}

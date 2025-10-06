@@ -7,7 +7,7 @@ class Usuario(AbstractUser):
     cpf = models.TextField(null=False, blank=True)
     birth_date = models.DateField(null=False, blank=True)
     phone = models.TextField(null=False, blank=True)
-
+    
 
     def __str__(self):
         return self.email
