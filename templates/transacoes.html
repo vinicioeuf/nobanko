@@ -1,17 +1,92 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Transações · NoBanko{% endblock %}
-
 {% block content %}
 <section class="nb-section nb-section--dense">
     <header class="nb-section__header">
         <h1>{{ page_title }}</h1>
         <p class="nb-caption">Filtre, acompanhe e entenda o comportamento da sua conta.</p>
+        <div class="nb-badge nb-badge--highlight">Saldo disponível: <strong>{{ saldo_atual }}</strong></div>
     </header>
+
+    <div class="nb-grid nb-grid--responsive">
+        <div class="nb-card nb-card--elevated nb-card--dense">
+            <header class="nb-card__header">
+                <h2>Depósito rápido</h2>
+                <p class="nb-caption">Adicione saldo para movimentar sua conta imediatamente.</p>
+            </header>
+            <form method="post" class="nb-form">
+                {% csrf_token %}
+                <input type="hidden" name="operation" value="deposit">
+                {% with form=deposit_form %}
+                    {% if form.error %}
+                        <div class="nb-alert nb-alert--error">{{ form.error }}</div>
+                    {% endif %}
+                    {% if form.success %}
+                        <div class="nb-alert nb-alert--success">{{ form.success }}</div>
+                    {% endif %}
+                    <label class="nb-form__field">
+                        <span>Valor</span>
+                        <input type="text" name="valor" value="{{ form.values.valor }}" placeholder="0,00" required>
+                    </label>
+                    <label class="nb-form__field">
+                        <span>Descrição (opcional)</span>
+                        <input type="text" name="descricao" value="{{ form.values.descricao }}" placeholder="Ex: Depósito inicial">
+                    </label>
+                    <div class="nb-form__actions">
+                        <button type="submit" class="nb-button nb-button--solid">Depositar</button>
+                    </div>
+                {% endwith %}
+            </form>
+        </div>
+
+        <div class="nb-card nb-card--elevated nb-card--dense">
+            <header class="nb-card__header">
+                <h2>Nova transferência</h2>
+                <p class="nb-caption">Envie valores em tempo real para outras contas NoBanko.</p>
+            </header>
+            <form method="post" class="nb-form nb-form--horizontal">
+                {% csrf_token %}
+                <input type="hidden" name="operation" value="transfer">
+                {% with form=transfer_form %}
+                    {% if form.error %}
+                        <div class="nb-alert nb-alert--error">{{ form.error }}</div>
+                    {% endif %}
+                    {% if form.success %}
+                        <div class="nb-alert nb-alert--success">{{ form.success }}</div>
+                    {% endif %}
+                    <div class="nb-form__row">
+                        <label class="nb-form__field">
+                            <span>Agência destino</span>
+                            <input type="text" name="agencia_destino" value="{{ form.values.agencia_destino }}" placeholder="0001" required>
+                        </label>
+                        <label class="nb-form__field">
+                            <span>Conta destino</span>
+                            <input type="text" name="conta_destino" value="{{ form.values.conta_destino }}" placeholder="00000000" required>
+                        </label>
+                    </div>
+                    <div class="nb-form__row">
+                        <label class="nb-form__field nb-form__field--half">
+                            <span>Valor</span>
+                            <input type="text" name="valor" value="{{ form.values.valor }}" placeholder="0,00" required>
+                        </label>
+                        <label class="nb-form__field">
+                            <span>Descrição (opcional)</span>
+                            <input type="text" name="descricao" value="{{ form.values.descricao }}" placeholder="Ex: Aluguel outubro">
+                        </label>
+                    </div>
+                    <div class="nb-form__actions">
+                        <button type="submit" class="nb-button nb-button--solid">Transferir agora</button>
+                    </div>
+                {% endwith %}
+            </form>
+        </div>
+    </div>
 
     <div class="nb-chip-group">
         {% for filter in transaction_filters %}
-            <button class="nb-chip-button{% if filter.active %} is-active{% endif %}" type="button">{{ filter.label }}</button>
+            <button class="nb-chip-button{% if filter.active %} is-active{% endif %}" type="button" disabled>{{ filter.label }}</button>
         {% endfor %}
     </div>
 
@@ -24,12 +99,25 @@
         </div>
         {% for tx in transactions %}
             <div class="nb-table__row">
-                <span>{{ tx.title }}</span>
-                <span>{{ tx.category }}</span>
+                <span>
+                    {{ tx.descricao }}
+                    {% if tx.contraparte %}
+                        <small class="nb-caption">{{ tx.contraparte }}</small>
+                    {% endif %}
+                </span>
+                <span>{{ tx.categoria }}</span>
                 <strong class="nb-table__amount">{{ tx.amount }}</strong>
-                <span>{{ tx.timestamp }}</span>
+                <span>{{ tx.timestamp|date:"d/m/Y H:i" }}</span>
             </div>
         {% endfor %}
+        {% if transactions|length == 0 %}
+            <div class="nb-table__row is-empty">
+                <span>Nenhuma transação registrada.</span>
+                <span>—</span>
+                <span>—</span>
+                <span>—</span>
+            </div>
+        {% endif %}
     </div>
 </section>
 
@@ -44,6 +132,12 @@
                 <span>{{ insight }}</span>
             </li>
         {% endfor %}
+        {% if insights|length == 0 %}
+            <li>
+                <span class="nb-dot" aria-hidden="true"></span>
+                <span>Realize sua primeira transferência para ver os insights automáticos.</span>
+            </li>
+        {% endif %}
     </ul>
 </section>
 {% endblock %}

@@ -1,13 +1,15 @@
 from datetime import date
+from decimal import Decimal, InvalidOperation
 import secrets
 
 from django.contrib.auth.hashers import check_password, make_password
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.shortcuts import redirect, render
 from django.urls import reverse
 
-from .models import Cliente, Usuario
+from .models import Cliente, Transacao, Usuario
 def base_context(extra=None, request=None):
 	base = {
 		"bank_name": "NoBanko",
@@ -247,6 +249,33 @@ def atendimento(request):
 
 
 def transacoes(request):
+	usuario_id = request.session.get("usuario_id")
+	if not usuario_id:
+		return redirect('nobanko_app:login')
+
+	cliente = (
+		Cliente.objects.select_related("usuario")
+		.filter(usuario_id=usuario_id)
+		.first()
+	)
+
+	if not cliente:
+		return redirect('nobanko_app:cadastro')
+
+	def _parse_valor(valor_raw: str) -> Decimal:
+		valor_sanitizado = (valor_raw or "").strip()
+		if not valor_sanitizado:
+			raise ValidationError("Informe um valor para transferência.")
+		valor_sanitizado = valor_sanitizado.replace("R$", "").replace(" ", "")
+		if "," in valor_sanitizado:
+			valor_sanitizado = valor_sanitizado.replace(".", "").replace(",", ".")
+		else:
+			valor_sanitizado = valor_sanitizado.replace(",", "")
+		try:
+			return Decimal(valor_sanitizado)
+		except InvalidOperation as exc:
+			raise ValidationError("Valor informado é inválido.") from exc
+
 	context = base_context(
 		{
 			"page_title": "Transações em tempo real",
@@ -254,41 +283,162 @@ def transacoes(request):
 				{"label": "Todos", "active": True},
 				{"label": "Entradas", "active": False},
 				{"label": "Saídas", "active": False},
-				{"label": "Agendadas", "active": False},
 			],
+			"transfer_form": {
+				"values": {
+					"agencia_destino": "",
+					"conta_destino": "",
+					"valor": "",
+					"descricao": "",
+				}
+			},
+			"deposit_form": {
+				"values": {
+					"valor": "",
+					"descricao": "",
+				}
+			},
+		},
+		request=request,
+	)
+
+	if request.method == "POST":
+		operacao = request.POST.get("operation") or ""
+
+		if operacao == "deposit":
+			descricao = (request.POST.get("descricao") or "").strip()
+			valor_raw = request.POST.get("valor") or ""
+
+			context["deposit_form"]["values"] = {
+				"valor": valor_raw,
+				"descricao": descricao,
+			}
+
+			try:
+				valor = _parse_valor(valor_raw)
+			except ValidationError as exc:
+				context["deposit_form"]["error"] = str(exc)
+			else:
+				try:
+					cliente.depositar(valor, descricao)
+				except ValidationError as exc:
+					context["deposit_form"]["error"] = (
+						exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+					)
+				else:
+					context["deposit_form"]["values"] = {
+						"valor": "",
+						"descricao": "",
+					}
+					context["deposit_form"]["success"] = (
+						f"Depósito de {_format_currency(valor)} realizado com sucesso."
+					)
+					cliente.refresh_from_db()
+
+		else:  # transferência
+			agencia_destino = (request.POST.get("agencia_destino") or "").strip()
+			conta_destino = (request.POST.get("conta_destino") or "").strip()
+			descricao = (request.POST.get("descricao") or "").strip()
+			valor_raw = request.POST.get("valor") or ""
+
+			context["transfer_form"]["values"] = {
+				"agencia_destino": agencia_destino,
+				"conta_destino": conta_destino,
+				"valor": valor_raw,
+				"descricao": descricao,
+			}
+
+			try:
+				valor = _parse_valor(valor_raw)
+			except ValidationError as exc:
+				context["transfer_form"]["error"] = str(exc)
+			else:
+				destino_cliente = (
+					Cliente.objects.select_related('usuario')
+					.filter(
+						usuario__agencia__iexact=agencia_destino,
+						usuario__conta__iexact=conta_destino,
+					)
+					.exclude(pk=cliente.pk)
+					.first()
+				)
+
+				if not destino_cliente:
+					context["transfer_form"]["error"] = "Conta de destino não encontrada."
+				else:
+					try:
+						cliente.transferir_para(destino_cliente, valor, descricao)
+					except ValidationError as exc:
+						context["transfer_form"]["error"] = (
+							exc.messages[0] if getattr(exc, "messages", None) else str(exc)
+						)
+					else:
+						context["transfer_form"]["values"] = {
+							"agencia_destino": "",
+							"conta_destino": "",
+							"valor": "",
+							"descricao": "",
+						}
+						context["transfer_form"]["success"] = (
+							f"Transferência de {_format_currency(valor)} concluída com sucesso."
+						)
+						cliente.refresh_from_db()
+
+	transacoes = (
+		cliente.transacoes
+		.select_related("contraparte__usuario")
+		.order_by("-data")
+	)
+
+	totais = transacoes.aggregate(
+		total_entradas=Sum('valor', filter=Q(tipo=Transacao.Tipo.ENTRADA)),
+		total_saidas=Sum('valor', filter=Q(tipo=Transacao.Tipo.SAIDA)),
+	)
+
+	insights = []
+	total_entradas = totais.get('total_entradas') or Decimal('0')
+	total_saidas = totais.get('total_saidas') or Decimal('0')
+
+	if total_entradas:
+		insights.append(
+			f"Entrou {_format_currency(total_entradas)} na sua conta recentemente."
+		)
+	if total_saidas:
+		insights.append(
+			f"Você enviou {_format_currency(total_saidas)} em transferências e pagamentos."
+		)
+	if total_entradas or total_saidas:
+		saldo_periodo = total_entradas - total_saidas
+		prefixo = "positivo" if saldo_periodo >= 0 else "negativo"
+		insights.append(
+			f"Seu fluxo líquido no período está {prefixo}: {_format_currency(abs(saldo_periodo))}."
+		)
+
+	context.update(
+		{
+			"saldo_atual": _format_currency(cliente.saldo),
 			"transactions": [
 				{
-					"title": "Transferência recebida",
-					"category": "Entrada",
-					"amount": "+ R$ 1.200,00",
-					"timestamp": "Hoje, 10:15",
-				},
-				{
-					"title": "Pagamento fatura cartão",
-					"category": "Saída",
-					"amount": "- R$ 850,40",
-					"timestamp": "Ontem, 22:58",
-				},
-				{
-					"title": "Boleto agendado",
-					"category": "Agendada",
-					"amount": "- R$ 230,00",
-					"timestamp": "05 Out, 08:00",
-				},
-				{
-					"title": "Transferência PIX",
-					"category": "Saída",
-					"amount": "- R$ 95,30",
-					"timestamp": "03 Out, 13:44",
-				},
+					"descricao": tx.descricao or tx.get_tipo_display(),
+					"categoria": tx.get_tipo_display(),
+					"amount": (
+						f"+ {_format_currency(tx.valor)}"
+						if tx.tipo == Transacao.Tipo.ENTRADA
+						else f"- {_format_currency(tx.valor)}"
+					),
+					"timestamp": tx.data,
+					"contraparte": (
+						tx.contraparte.usuario.nome
+						if tx.contraparte and tx.contraparte.usuario
+						else ""
+					),
+				}
+				for tx in transacoes[:50]
 			],
-			"insights": [
-				"Você movimentou R$ 6.430,00 nos últimos 7 dias.",
-				"As inscrições em serviços representaram 12% das saídas do mês.",
-				"Seu boleto de energia vence em 3 dias.",
-			],
+			"insights": insights,
 		}
 	)
+
 	return render(request, "transacoes.html", context)
 
 

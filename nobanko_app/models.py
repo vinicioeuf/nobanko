@@ -1,4 +1,9 @@
-from django.db import models
+from decimal import Decimal, InvalidOperation
+
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
+from django.db import models, transaction
+from django.utils import timezone
 
 class Usuario(models.Model):
     nome = models.CharField(max_length=100)
@@ -28,6 +33,112 @@ class Cliente(models.Model):
 
     def __str__(self):
         return f"Cliente {self.usuario.nome}"
+
+    def depositar(self, valor, descricao=""):
+        try:
+            valor_decimal = Decimal(valor)
+        except (TypeError, ValueError, InvalidOperation):
+            raise ValidationError("Informe um valor numérico válido.")
+
+        if valor_decimal <= 0:
+            raise ValidationError("O valor do depósito deve ser maior que zero.")
+
+        valor_decimal = valor_decimal.quantize(Decimal("0.01"))
+
+        descricao = (descricao or "Depósito")[:255]
+
+        with transaction.atomic():
+            cliente = Cliente.objects.select_for_update().get(pk=self.pk)
+            cliente.saldo += valor_decimal
+            cliente.save(update_fields=["saldo"])
+
+            transacao = Transacao.objects.create(
+                cliente=cliente,
+                valor=valor_decimal,
+                tipo=Transacao.Tipo.ENTRADA,
+                descricao=descricao,
+                saldo_resultante=cliente.saldo,
+            )
+
+        return transacao
+
+    def transferir_para(self, destino, valor, descricao=""):
+        if not isinstance(destino, Cliente):
+            raise ValidationError("Destino inválido para transferência.")
+
+        if self.pk == destino.pk:
+            raise ValidationError("Não é possível transferir para a mesma conta.")
+
+        try:
+            valor_decimal = Decimal(valor)
+        except (TypeError, ValueError, InvalidOperation):
+            raise ValidationError("Informe um valor numérico válido.")
+
+        if valor_decimal <= 0:
+            raise ValidationError("O valor da transferência deve ser maior que zero.")
+
+        valor_decimal = valor_decimal.quantize(Decimal("0.01"))
+
+        descricao = (descricao or "").strip()
+
+        with transaction.atomic():
+            remetente = Cliente.objects.select_for_update().get(pk=self.pk)
+            destinatario = Cliente.objects.select_for_update().get(pk=destino.pk)
+
+            if remetente.saldo < valor_decimal:
+                raise ValidationError("Saldo insuficiente para realizar a transferência.")
+
+            remetente.saldo -= valor_decimal
+            destinatario.saldo += valor_decimal
+
+            remetente.save(update_fields=["saldo"])
+            destinatario.save(update_fields=["saldo"])
+
+            descricao_saida = descricao or (
+                f"Transferência para conta {destinatario.usuario.agencia}-"
+                f"{destinatario.usuario.conta}"
+            )
+            descricao_entrada = descricao or (
+                f"Transferência recebida de conta {remetente.usuario.agencia}-"
+                f"{remetente.usuario.conta}"
+            )
+
+            transacao_saida = Transacao.objects.create(
+                cliente=remetente,
+                valor=valor_decimal,
+                tipo=Transacao.Tipo.SAIDA,
+                descricao=descricao_saida,
+                saldo_resultante=remetente.saldo,
+                contraparte=destinatario,
+            )
+
+            transacao_entrada = Transacao.objects.create(
+                cliente=destinatario,
+                valor=valor_decimal,
+                tipo=Transacao.Tipo.ENTRADA,
+                descricao=descricao_entrada,
+                saldo_resultante=destinatario.saldo,
+                contraparte=remetente,
+            )
+
+            transferencia = Transferencia.objects.create(
+                origem=remetente,
+                destino=destinatario,
+                valor=valor_decimal,
+                descricao=descricao,
+                status=Transferencia.Status.CONCLUIDA,
+                processada_em=timezone.now(),
+                transacao_origem=transacao_saida,
+                transacao_destino=transacao_entrada,
+            )
+
+            transacao_saida.transferencia = transferencia
+            transacao_saida.save(update_fields=["transferencia"])
+
+            transacao_entrada.transferencia = transferencia
+            transacao_entrada.save(update_fields=["transferencia"])
+
+            return transferencia
 
 
 class Cartao(models.Model):
@@ -78,17 +189,92 @@ class Emprestimo(models.Model):
 
 
 class Transacao(models.Model):
-    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-    valor = models.DecimalField(max_digits=12, decimal_places=2)
-    tipo = models.CharField(max_length=20, choices=[
-        ('entrada', 'Entrada'),
-        ('saida', 'Saída')
-    ])
+    class Tipo(models.TextChoices):
+        ENTRADA = 'entrada', 'Entrada'
+        SAIDA = 'saida', 'Saída'
+
+    cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='transacoes')
+    valor = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    tipo = models.CharField(max_length=20, choices=Tipo.choices)
     data = models.DateTimeField(auto_now_add=True)
-    descricao = models.CharField(max_length=255)
+    descricao = models.CharField(max_length=255, blank=True)
+    saldo_resultante = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    contraparte = models.ForeignKey(
+        'Cliente',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transacoes_como_contraparte'
+    )
+    transferencia = models.ForeignKey(
+        'Transferencia',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transacoes'
+    )
+
+    class Meta:
+        ordering = ['-data']
 
     def __str__(self):
-        return f"{self.tipo} - {self.valor} ({self.cliente.usuario.nome})"
+        sinal = '+' if self.tipo == self.Tipo.ENTRADA else '-'
+        return f"{sinal} {self.valor} ({self.cliente.usuario.nome})"
+
+
+class Transferencia(models.Model):
+    class Status(models.TextChoices):
+        PENDENTE = 'pendente', 'Pendente'
+        CONCLUIDA = 'concluida', 'Concluída'
+        CANCELADA = 'cancelada', 'Cancelada'
+
+    origem = models.ForeignKey(
+        Cliente,
+        on_delete=models.PROTECT,
+        related_name='transferencias_enviadas'
+    )
+    destino = models.ForeignKey(
+        Cliente,
+        on_delete=models.PROTECT,
+        related_name='transferencias_recebidas'
+    )
+    valor = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))]
+    )
+    descricao = models.CharField(max_length=255, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDENTE)
+    criada_em = models.DateTimeField(auto_now_add=True)
+    processada_em = models.DateTimeField(null=True, blank=True)
+    transacao_origem = models.OneToOneField(
+        'Transacao',
+        on_delete=models.PROTECT,
+        related_name='transferencia_saida'
+    )
+    transacao_destino = models.OneToOneField(
+        'Transacao',
+        on_delete=models.PROTECT,
+        related_name='transferencia_entrada'
+    )
+
+    class Meta:
+        ordering = ['-criada_em']
+
+    def concluir(self):
+        self.status = self.Status.CONCLUIDA
+        self.processada_em = timezone.now()
+        self.save(update_fields=['status', 'processada_em'])
+
+    def __str__(self):
+        return (
+            f"Transferência de {self.origem.usuario.conta} para {self.destino.usuario.conta} "
+            f"no valor de {self.valor}"
+        )
 
 
 class Mensagem(models.Model):
