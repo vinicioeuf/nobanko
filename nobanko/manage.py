@@ -2,10 +2,16 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+from pathlib import Path
 
 
 def main():
     """Run administrative tasks."""
+    base_dir = Path(__file__).resolve().parent
+    project_root = base_dir.parent
+    project_root_str = str(project_root)
+    if project_root_str not in sys.path:
+        sys.path.insert(0, project_root_str)
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'nobanko.settings')
     try:
         from django.core.management import execute_from_command_line
